@@ -1,6 +1,7 @@
-let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
+// 1. 데이터를 담을 변수들을 확실하게 전역으로 선언
+var majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 패턴 (긴 단어 우선 매칭)
+// 2. 강조 패턴 (순서: 긴 단어 우선순위)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
@@ -16,10 +17,11 @@ const MATH_PATTERNS = [
     { name: "수학(일반)", regex: /수학(?![가-힣])/g }
 ];
 
-async function loadCSV(file) {
+// 3. CSV 로드 함수 (전역 등록)
+window.loadCSV = async function(file) {
     try {
         const response = await fetch(file);
-        if (!response.ok) throw new Error(`${file} 파일을 찾을 수 없습니다.`);
+        if (!response.ok) throw new Error(file + " 파일을 찾을 수 없습니다.");
         const text = await response.text();
         return new Promise((resolve) => {
             Papa.parse(text, { header: true, skipEmptyLines: true, complete: (r) => resolve(r.data) });
@@ -28,9 +30,9 @@ async function loadCSV(file) {
         console.error(error);
         return [];
     }
-}
+};
 
-// 하이라이트 함수 (Placeholder 기법 적용)
+// 4. 하이라이트 함수 (가로채기 버그 해결 방식)
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let result = text;
@@ -53,30 +55,15 @@ function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     return result;
 }
 
-// 전역 함수 등록 (클릭 이벤트용)
-window.filterBySubject = function(subjectName) {
-    searchMajor(subjectName);
-};
-
-function showResult(html) {
-    const r = document.getElementById("result");
-    if (!r) return;
-    r.innerHTML = html;
-    r.classList.add("show-result");
-}
-
-function clearResult() {
-    const r = document.getElementById("result");
-    if (!r) return;
-    r.innerHTML = "";
-    r.classList.remove("show-result");
-}
-
-// 전공 검색 함수
-function searchMajor(selectedSubject = null) {
+// 5. 전공 검색 함수 (window에 등록하여 어디서든 호출 가능)
+window.searchMajor = function(selectedSubject = null) {
     const inputEl = document.getElementById("majorInput");
     const query = inputEl ? inputEl.value.trim() : "";
-    if (!query) { clearResult(); return; }
+    if (!query) {
+        const r = document.getElementById("result");
+        if(r) { r.innerHTML = ""; r.classList.remove("show-result"); }
+        return;
+    }
     
     let searchKeywords = [query];
     const aliasEntry = aliasData.find(row => {
@@ -90,15 +77,14 @@ function searchMajor(selectedSubject = null) {
     }
 
     const results = majorData.filter(row => {
-        const d1 = (row["모집단위1"] || "").trim();
-        const d2 = (row["모집단위2"] || "").trim();
-        const fullDept = `${d1} ${d2}`;
+        const fullDept = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
         if (query === "국어교육" && (fullDept.includes("일어") || fullDept.includes("중국어"))) return false;
         return fullDept.includes(query) || searchKeywords.some(k => fullDept.includes(k));
     });
 
     if (results.length === 0) {
-        showResult("<p style='text-align:center; padding:20px;'>해당 학과를 찾을 수 없습니다.</p>");
+        const r = document.getElementById("result");
+        if(r) r.innerHTML = "<p style='text-align:center; padding:20px;'>해당 학과를 찾을 수 없습니다.</p>";
         return;
     }
 
@@ -116,7 +102,7 @@ function searchMajor(selectedSubject = null) {
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
     html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약 (과목 클릭 시 강조)</h4><div class="summary-tags">
                 ${sortedMath.map(([name, count]) => `
-                    <span onclick="window.filterBySubject('${name}')" class="summary-tag ${selectedSubject === name ? 'active-tag' : ''}">
+                    <span onclick="window.searchMajor('${name}')" class="summary-tag ${selectedSubject === name ? 'active-tag' : ''}">
                         ${name}: <strong>${count}회</strong>
                     </span>`).join("")}</div></div>`;
     
@@ -128,18 +114,21 @@ function searchMajor(selectedSubject = null) {
                  <td>${highlightMathSubjects(row["비고"], "math-recom", selectedSubject)}</td></tr>`;
     });
     html += "</tbody></table></div>";
-    showResult(html);
-}
+    
+    const r = document.getElementById("result");
+    if(r) { r.innerHTML = html; r.classList.add("show-result"); }
+};
 
-// 수학 과목 검색 함수
-function searchSubject() {
+// 6. 수학 과목 검색 함수
+window.searchSubject = function() {
     const inputEl = document.getElementById("subjectInput");
     const query = inputEl ? inputEl.value.trim() : "";
-    if (!query) { clearResult(); return; }
+    if (!query) return;
     
     const sub = mathData.find(r => (r["과목명"]||"").includes(query) || (r["별칭"]||"").includes(query));
     if (!sub) {
-        showResult("<p style='text-align:center; padding:20px;'>과목 정보를 찾을 수 없습니다.</p>");
+        const r = document.getElementById("result");
+        if(r) r.innerHTML = "<p style='text-align:center; padding:20px;'>과목 정보를 찾을 수 없습니다.</p>";
         return;
     }
     
@@ -149,71 +138,45 @@ function searchSubject() {
         if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`;
     });
     html += `</div>`;
-    
     if (h) {
-        html += `<div class="card"><h3>📊 이수 흐름</h3>`;
-        if (h["선수과목"]) html += `<p><strong>선수과목:</strong> ${h["선수과목"]}</p>`;
-        if (h["후속과목"]) html += `<p><strong>후속과목:</strong> ${h["후속과목"]}</p>`;
-        html += `</div>`;
+        html += `<div class="card"><h3>📊 이수 흐름</h3><p><strong>선수과목:</strong> ${h["선수과목"]||"없음"}</p><p><strong>후속과목:</strong> ${h["후속과목"]||"없음"}</p></div>`;
     }
-    showResult(html);
-}
+    const r = document.getElementById("result");
+    if(r) { r.innerHTML = html; r.classList.add("show-result"); }
+};
 
-// 초기화 함수
-async function init() {
+// 7. 초기화 함수 (가장 빠르고 안정적인 시점에 실행)
+document.addEventListener("DOMContentLoaded", async () => {
     try {
         [majorData, mathData, hierarchyData, aliasData] = await Promise.all([
-            loadCSV("major_recommendations.csv"),
-            loadCSV("math_subjects.csv"),
-            loadCSV("math_hierarchy.csv"),
-            loadCSV("major_alias.csv")
+            window.loadCSV("major_recommendations.csv"),
+            window.loadCSV("math_subjects.csv"),
+            window.loadCSV("math_hierarchy.csv"),
+            window.loadCSV("major_alias.csv")
         ]);
 
-        const majorBtn = document.getElementById("majorSearchBtn");
-        const subjectBtn = document.getElementById("subjectSearchBtn");
-        const majorInput = document.getElementById("majorInput");
-        const subjectInput = document.getElementById("subjectInput");
-        const majorTab = document.getElementById("majorTab");
-        const subjectTab = document.getElementById("subjectTab");
-
-        if (majorBtn) majorBtn.onclick = () => searchMajor();
-        if (subjectBtn) subjectBtn.onclick = searchSubject;
-        
-        if (document.getElementById("majorResetBtn")) {
-            document.getElementById("majorResetBtn").onclick = () => { majorInput.value = ""; clearResult(); };
-        }
-        if (document.getElementById("subjectResetBtn")) {
-            document.getElementById("subjectResetBtn").onclick = () => { subjectInput.value = ""; clearResult(); };
-        }
-
-        if (majorInput) {
-            majorInput.onkeydown = (e) => { if (e.key === "Enter") searchMajor(); };
-        }
-        if (subjectInput) {
-            subjectInput.onkeydown = (e) => { if (e.key === "Enter") searchSubject(); };
-        }
+        // 버튼 이벤트 연결
+        document.getElementById("majorSearchBtn").onclick = () => window.searchMajor();
+        document.getElementById("subjectSearchBtn").onclick = () => window.searchSubject();
+        document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; window.searchMajor(); };
+        document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; };
+        document.getElementById("majorInput").onkeydown = (e) => { if (e.key === "Enter") window.searchMajor(); };
+        document.getElementById("subjectInput").onkeydown = (e) => { if (e.key === "Enter") window.searchSubject(); };
 
         // 탭 전환 로직
+        const majorTab = document.getElementById("majorTab");
+        const subjectTab = document.getElementById("subjectTab");
         if (majorTab && subjectTab) {
             majorTab.onclick = () => {
-                majorTab.classList.add("active");
-                subjectTab.classList.remove("active");
-                document.getElementById("majorSection").style.display = "block";
-                document.getElementById("subjectSection").style.display = "none";
-                clearResult();
+                majorTab.classList.add("active"); subjectTab.classList.remove("active");
+                document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none";
             };
             subjectTab.onclick = () => {
-                subjectTab.classList.add("active");
-                majorTab.classList.remove("active");
-                document.getElementById("subjectSection").style.display = "block";
-                document.getElementById("majorSection").style.display = "none";
-                clearResult();
+                subjectTab.classList.add("active"); majorTab.classList.remove("active");
+                document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none";
             };
         }
     } catch (e) {
         console.error("초기화 중 오류 발생:", e);
     }
-}
-
-// 페이지 로드 시 실행
-window.onload = init;
+});
