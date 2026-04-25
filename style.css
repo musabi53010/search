@@ -162,3 +162,14 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
+
+/* 요약표 클릭 시 강조될 과목의 스타일 */
+.selected-math {
+    background-color: #fef08a !important; /* 선명한 노란색 배경 */
+    color: #854d0e !important;           /* 진한 갈색 글자 */
+    font-weight: 800 !important;
+    border: 2px solid #eab308 !important;
+    padding: 1px 4px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
