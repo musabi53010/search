@@ -1,6 +1,6 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 및 통계 패턴 (비고란까지 완벽 대응)
+// 1. 강조 패턴
 const MATH_PATTERNS = [
     { name: "대수", regex: /대수/g },
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
@@ -60,7 +60,7 @@ function findMajor(query) {
     return null;
 }
 
-// ★★★ 핵심: 전공 검색 함수 (필터링 로직 초정밀화) ★★★
+// ★★★ 이 부분이 핵심입니다 ★★★
 function searchMajor() {
     const query = document.getElementById("majorInput").value.trim();
     if (!query) { showResult(""); return; }
@@ -68,23 +68,21 @@ function searchMajor() {
     const found = findMajor(query);
     const keywords = found ? found.keywords : [query];
 
-    // 필터링 규칙: 오로지 '모집단위(학과명)'에 키워드가 있을 때만!
-    // '해양학과'의 비고란에 '우주'가 있어도, 학과명에 '천문'이나 '우주'가 없으면 이제 걸러집니다.
+    // 필터링 규칙 강화: 
+    // '비고'란은 검색 대상에서 완전히 제외하고, 
+    // [모집단위2]에 키워드가 있는 것만 '진짜 학과'로 인정합니다. (해양학과의 대학명/모집단위1 무시)
     const results = majorData.filter(row => {
-        const deptName1 = (row["모집단위1"] || "").trim();
-        const deptName2 = (row["모집단위2"] || "").trim();
-        const fullDeptName = deptName1 + " " + deptName2;
-        
-        // 검색 키워드 중 하나라도 학과명(모집단위)에 포함되어 있는지 검사
-        return keywords.some(k => fullDeptName.includes(k));
+        const majorName = (row["모집단위2"] || "").trim();
+        const univName = (row["대학명"] || "").trim();
+        // 모집단위2(실제 학과명)나 대학명에 키워드가 정확히 포함될 때만 통과
+        return keywords.some(k => majorName.includes(k) || univName.includes(k));
     });
 
     if (results.length === 0) { 
-        showResult("<p style='text-align:center; padding: 20px;'>학과명에서 검색 결과가 없습니다.</p>"); 
+        showResult("<p style='text-align:center; padding: 20px;'>정확한 학과명에서 결과를 찾지 못했습니다.</p>"); 
         return; 
     }
 
-    // 통계 계산
     let mathCount = {};
     MATH_PATTERNS.forEach(p => mathCount[p.name] = 0);
     results.forEach(row => {
@@ -97,7 +95,7 @@ function searchMajor() {
     const sortedMath = Object.entries(mathCount).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
 
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
-    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약 (선택된 학과 기준)</h4><div class="summary-tags">
+    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약</h4><div class="summary-tags">
              ${sortedMath.map(([name, count]) => `<span>${name}: <strong>${count}회</strong></span>`).join("")}</div></div>`;
     
     html += `<div style="overflow-x:auto;"><table><thead><tr><th>지역</th><th>대학명</th><th>모집단위1</th><th>모집단위2</th><th>핵심과목</th><th>권장과목</th><th>비고</th></tr></thead><tbody>`;
@@ -128,7 +126,6 @@ async function init() {
             loadCSV("major_recommendations.csv"), loadCSV("math_subjects.csv"),
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
-
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -137,15 +134,12 @@ async function init() {
             document.getElementById("subjectTab").classList.add("active"); document.getElementById("majorTab").classList.remove("active");
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
-
         document.getElementById("majorSearchBtn").onclick = searchMajor;
         document.getElementById("subjectSearchBtn").onclick = searchSubject;
         document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
         document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
-
         document.getElementById("majorInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchMajor(); } });
         document.getElementById("subjectInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchSubject(); } });
-
     } catch (e) { console.error(e); }
 }
 init();
