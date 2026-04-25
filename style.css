@@ -94,7 +94,7 @@ input:focus {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* 5. 요약 정보 박스 */
+/* 5. 요약 정보 박스 및 태그 스타일 */
 .summary-box {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -113,30 +113,46 @@ input:focus {
 
 .summary-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.summary-tags span {
-    background: white;
+/* 요약표 개별 태그 */
+.summary-tag {
+    cursor: pointer;
     border: 1px solid #cbd5e1;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 13.5px;
+    background: white;
     transition: all 0.2s ease;
-    cursor: pointer;
+    color: #334155;
 }
 
-.summary-tags span:hover {
+.summary-tag:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     border-color: #2563eb;
 }
 
+/* 요약표 태그 클릭 시 활성화 상태 */
+.active-tag {
+    background: #2563eb !important;
+    color: white !important;
+    border-color: #1e40af !important;
+    font-weight: bold;
+}
+
+/* 활성화된 태그 안의 횟수(strong) 숫자 가독성 개선 */
+.active-tag strong {
+    color: #ffffff !important; 
+    text-shadow: 0px 0px 2px rgba(0,0,0,0.2);
+}
+
 .summary-tags strong { color: #2563eb; }
 
-/* 6. 테이블 및 하이라이트 디자인 */
+/* 6. 테이블 및 과목 하이라이트 */
 table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px; }
 th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; padding: 12px 10px; text-align: left; }
 td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all; }
 
-/* 기본 수학 과목 강조 (파랑/초록) */
+/* 기본 수학 과목 강조 색상 (파랑/초록) */
 .math-core {
     color: #1d4ed8; font-weight: 700; background: #dbeafe;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;
@@ -147,7 +163,7 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bbf7d0;
 }
 
-/* ★ 요약표 클릭 시 표 안의 해당 과목 강조 (노란색) ★ */
+/* 요약표 클릭 시 본문에서 강조되는 스타일 (노란색) */
 .selected-math {
     background-color: #fef08a !important; /* 선명한 노란색 */
     color: #854d0e !important;           /* 진한 갈색 글자 */
@@ -156,6 +172,7 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     padding: 2px 6px !important;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: inline-block;
 }
 
 .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }

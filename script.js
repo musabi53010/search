@@ -1,13 +1,13 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 패턴 (경제수학 패턴 보강 및 긴 단어 우선순위)
+// 1. 강조 패턴 (띄어쓰기 유연성 강화)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
-    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // 공백 유무 상관없이 매칭
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g },
     { name: "실용통계", regex: /실용\s*통계/g },
     { name: "직무수학", regex: /직무\s*수학/g },
     { name: "수학과문화", regex: /수학과\s*문화/g },
@@ -24,18 +24,20 @@ async function loadCSV(file) {
     });
 }
 
-// 하이라이트 함수
+// 하이라이트 함수: 선택된 과목은 띄어쓰기를 제거하고 비교하여 매칭시킵니다.
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let highlighted = text;
     
-    // 패턴 이름을 길이순으로 정렬하여 정확한 매칭 유도
     const sortedPatterns = [...MATH_PATTERNS].sort((a, b) => b.name.length - a.name.length);
 
     sortedPatterns.forEach(item => {
         highlighted = highlighted.replace(item.regex, (match) => {
-            const isSelected = (selectedSubject && item.name === selectedSubject);
-            // 클릭된 과목이면 'selected-math' 클래스를 추가하여 색을 변화시킴
+            // 핵심: 공백을 제거하고 비교하여 '경제수학' === '경제 수학'이 성립하게 함
+            const cleanMatch = match.replace(/\s+/g, "");
+            const cleanSelected = selectedSubject ? selectedSubject.replace(/\s+/g, "") : null;
+            
+            const isSelected = (cleanSelected && (cleanMatch === cleanSelected || item.name === selectedSubject));
             return `<span class="${colorClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
         });
     });
@@ -78,11 +80,12 @@ function searchMajor(selectedSubject = null) {
         const d1 = (row["모집단위1"] || "").trim();
         const d2 = (row["모집단위2"] || "").trim();
         const fullDept = d1 + " " + d2;
-        const matchesDirect = fullDept.includes(query);
+        
+        const matchesQuery = fullDept.includes(query);
         const matchesKeyword = searchKeywords.some(k => fullDept.includes(k));
 
         if (query === "국어교육" && (fullDept.includes("일어") || fullDept.includes("중국어"))) return false;
-        return matchesDirect || matchesKeyword;
+        return matchesQuery || matchesKeyword;
     });
 
     if (results.length === 0) {
@@ -107,10 +110,8 @@ function searchMajor(selectedSubject = null) {
                 <h4>📊 수학 교과 언급 요약 (과목 클릭 시 하단 표에서 강조)</h4>
                 <div class="summary-tags">
                     ${sortedMath.map(([name, count]) => {
-                        const isSelected = (selectedSubject === name);
-                        return `<span onclick="filterBySubject('${name}')" 
-                                      style="cursor:pointer; border:1px solid #cbd5e1; padding:5px 12px; border-radius:20px; margin:2px; display:inline-block; transition:0.2s;
-                                      ${isSelected ? 'background:#2563eb; color:white; font-weight:bold; border-color:#1e40af;' : 'background:white; color:#334155;'}">
+                        const isThisSelected = (selectedSubject === name);
+                        return `<span onclick="filterBySubject('${name}')" class="summary-tag ${isThisSelected ? 'active-tag' : ''}">
                                     ${name}: <strong>${count}회</strong>
                                 </span>`;
                     }).join("")}
@@ -130,7 +131,6 @@ function searchMajor(selectedSubject = null) {
     showResult(html);
 }
 
-// searchSubject, init 함수는 이전과 동일
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { clearResult(); return; }
