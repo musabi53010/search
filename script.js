@@ -1,13 +1,13 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 및 통계 패턴
+// 1. 강조 및 통계 패턴 (경제수학 및 패턴 보강)
 const MATH_PATTERNS = [
     { name: "대수", regex: /대수/g },
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "기하", regex: /기하/g },
-    { name: "경제수학", regex: /경제\s*수학/g },
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // 띄어쓰기 완벽 대응
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
     { name: "실용통계", regex: /실용\s*통계/g },
@@ -24,12 +24,19 @@ async function loadCSV(file) {
     });
 }
 
-function highlightMathSubjects(text, colorClass) {
+// 하이라이트 함수 (선택된 과목은 특별한 클래스 추가)
+function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let highlighted = text;
+    
     const sortedPatterns = [...MATH_PATTERNS].sort((a, b) => b.name.length - a.name.length);
+
     sortedPatterns.forEach(item => {
-        highlighted = highlighted.replace(item.regex, (match) => `<span class="${colorClass}">${match}</span>`);
+        highlighted = highlighted.replace(item.regex, (match) => {
+            // 요약표에서 선택된 과목이면 'selected-math' 클래스 추가
+            const isSelected = selectedSubject && item.name === selectedSubject;
+            return `<span class="${colorClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
+        });
     });
     return highlighted;
 }
@@ -52,7 +59,8 @@ function clearResult() {
 
 function findMajorInfo(query) {
     for (const row of aliasData) {
-        const aliases = (row["별칭"] || "").split(";").map(x => x.trim());
+        if (!row["별칭"]) continue;
+        const aliases = row["별칭"].split(";").map(x => x.trim());
         if (aliases.some(a => query.includes(a)) || (row["대표전공"] && query.includes(row["대표전공"]))) {
             return { 
                 major: row["대표전공"], 
@@ -63,22 +71,27 @@ function findMajorInfo(query) {
     return null;
 }
 
-function searchMajor() {
+// 요약표 클릭 시 호출될 함수
+window.filterBySubject = function(subjectName) {
+    const query = document.getElementById("majorInput").value.trim();
+    searchMajor(subjectName); // 특정 과목을 강조하며 다시 검색/출력
+};
+
+function searchMajor(selectedSubject = null) {
     const query = document.getElementById("majorInput").value.trim();
     if (!query) { clearResult(); return; }
     
     const found = findMajorInfo(query);
     const searchKeywords = found ? found.keywords : [query];
 
-    // 모집단위2(학과명) 위주의 강력한 필터링
+    // 필터링 규칙 보강: 모집단위1, 2 모두 검색 (국어교육과 등 대응)
     const results = majorData.filter(row => {
-        const deptName = (row["모집단위2"] || "").trim();
-        const univName = (row["대학명"] || "").trim();
-        return searchKeywords.some(k => deptName.includes(k) || univName.includes(k));
+        const fullDept = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
+        return searchKeywords.some(k => fullDept.includes(k));
     });
 
     if (results.length === 0) {
-        showResult("<p style='text-align:center; padding:20px;'>해당 학과명을 찾을 수 없습니다.</p>");
+        showResult("<p style='text-align:center; padding:20px;'>해당 학과를 찾을 수 없습니다. (검색어: " + searchKeywords.join(", ") + ")</p>");
         return;
     }
 
@@ -96,15 +109,24 @@ function searchMajor() {
 
     // HTML 생성
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
-    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약</h4><div class="summary-tags">
-             ${sortedMath.map(([name, count]) => `<span>${name}: <strong>${count}회</strong></span>`).join("")}</div></div>`;
+    html += `<div class="summary-box">
+                <h4>📊 수학 교과 언급 요약 (과목 클릭 시 강조)</h4>
+                <div class="summary-tags">
+                    ${sortedMath.map(([name, count]) => 
+                        `<span onclick="filterBySubject('${name}')" style="cursor:pointer; ${selectedSubject === name ? 'border:2px solid #2563eb; background:#dbeafe;' : ''}">
+                            ${name}: <strong>${count}회</strong>
+                        </span>`
+                    ).join("")}
+                </div>
+            </div>`;
     
     html += `<div style="overflow-x:auto;"><table><thead><tr><th>지역</th><th>대학명</th><th>모집단위1</th><th>모집단위2</th><th>핵심과목</th><th>권장과목</th><th>비고</th></tr></thead><tbody>`;
     
     results.forEach(row => {
         html += `<tr><td>${row["지역"]||""}</td><td>${row["대학명"]||""}</td><td>${row["모집단위1"]||""}</td><td>${row["모집단위2"]||""}</td>
-                 <td>${highlightMathSubjects(row["핵심과목"], "math-core")}</td><td>${highlightMathSubjects(row["권장과목"], "math-recom")}</td>
-                 <td>${highlightMathSubjects(row["비고"], "math-recom")}</td></tr>`;
+                 <td>${highlightMathSubjects(row["핵심과목"], "math-core", selectedSubject)}</td>
+                 <td>${highlightMathSubjects(row["권장과목"], "math-recom", selectedSubject)}</td>
+                 <td>${highlightMathSubjects(row["비고"], "math-recom", selectedSubject)}</td></tr>`;
     });
     html += "</tbody></table></div>";
     showResult(html);
@@ -113,26 +135,16 @@ function searchMajor() {
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { clearResult(); return; }
-    
     const sub = mathData.find(r => (r["과목명"]||"").includes(query) || (r["별칭"]||"").includes(query));
-    if (!sub) {
-        showResult("<p style='text-align:center; padding:20px;'>과목 정보를 찾을 수 없습니다.</p>");
-        return;
-    }
-
+    if (!sub) { showResult("<p style='text-align:center; padding:20px;'>과목 정보를 찾을 수 없습니다.</p>"); return; }
     const h = hierarchyData.find(r => r["과목명"] === sub["과목명"]);
-    
     let html = `<h2>📘 ${sub["과목명"]}</h2><div class="card">`;
-    ["구분", "이수학점", "성적처리", "수능관련", "설명", "추천전공", "관련직업", "관련학과"].forEach(f => {
-        if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`;
-    });
+    ["구분", "이수학점", "성적처리", "수능관련", "설명", "추천전공", "관련학과"].forEach(f => { if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`; });
     html += `</div>`;
-    
     if (h) {
         html += `<div class="card"><h3>📊 이수 흐름</h3>`;
         if (h["선수과목"]) html += `<p><strong>선수과목:</strong> ${h["선수과목"]}</p>`;
         if (h["후속과목"]) html += `<p><strong>후속과목:</strong> ${h["후속과목"]}</p>`;
-        if (h["설명"]) html += `<p><strong>설명:</strong> ${h["설명"]}</p>`;
         html += `</div>`;
     }
     showResult(html);
@@ -144,7 +156,6 @@ async function init() {
             loadCSV("major_recommendations.csv"), loadCSV("math_subjects.csv"),
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
-
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -153,15 +164,12 @@ async function init() {
             document.getElementById("subjectTab").classList.add("active"); document.getElementById("majorTab").classList.remove("active");
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
-
-        document.getElementById("majorSearchBtn").onclick = searchMajor;
+        document.getElementById("majorSearchBtn").onclick = () => searchMajor();
         document.getElementById("subjectSearchBtn").onclick = searchSubject;
         document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
         document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
-
         document.getElementById("majorInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchMajor(); } });
         document.getElementById("subjectInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchSubject(); } });
-
     } catch (e) { console.error(e); }
 }
 init();
