@@ -1,90 +1,136 @@
+/* 전체 배경 및 폰트 설정 */
 body {
-    font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
-    background: #f8fafc;
-    color: #1f2937;
+    font-family: 'Pretendard', 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+    background: #f1f5f9;
+    color: #334155;
     margin: 0;
+    line-height: 1.6;
 }
 
 .container {
-    max-width: 1100px;
-    margin: 48px auto;
-    padding: 0 24px;
+    max-width: 1200px; /* 화면을 조금 더 넓게 사용 */
+    margin: 40px auto;
+    padding: 0 20px;
 }
 
 h1 {
-    font-size: 40px;
-    margin-bottom: 10px;
+    font-size: 32px;
+    color: #1e293b;
+    text-align: center;
+    margin-bottom: 8px;
 }
 
 p {
-    font-size: 18px;
+    text-align: center;
     color: #64748b;
-    margin-bottom: 28px;
+    margin-bottom: 30px;
 }
 
+/* 탭 스타일 */
 .tabs {
     display: flex;
-    gap: 12px;
-    margin-bottom: 22px;
-}
-
-button {
-    border: none;
-    border-radius: 16px;
-    padding: 14px 22px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
 }
 
 .tab-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
     background: #e2e8f0;
-    color: #334155;
+    transition: all 0.2s;
 }
 
 .tab-btn.active {
-    background: #3b82f6;
-    color: white;
-}
-
-.search-box {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 28px;
-}
-
-.search-box input {
-    flex: 1;
-    min-width: 0;
-    padding: 16px 18px;
-    border-radius: 18px;
-    border: 1px solid #cbd5e1;
-    font-size: 17px;
-    outline: none;
-    background: white;
-}
-
-.search-box input:focus {
-    border-color: #3b82f6;
-}
-
-.search-btn {
     background: #2563eb;
     color: white;
-    white-space: nowrap;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
 }
 
-.reset-btn {
-    background: #f1f5f9;
-    color: #334155;
-    white-space: nowrap;
+/* 검색창 스타일 */
+.search-box {
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
 }
 
-button:hover {
-    filter: brightness(0.96);
+input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 16px;
+    outline: none;
 }
 
+input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-btn { background: #2563eb; color: white; }
+.reset-btn { background: #64748b; color: white; }
+
+/* 결과 테이블 디자인 (이 부분이 핵심입니다!) */
 #result {
-    margin-top: 24px;
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* 화면이 좁아지면 가로 스크롤 생성 */
 }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px; /* 글자 크기를 살짝 줄여 여유 공간 확보 */
+    min-width: 800px; /* 최소 너비를 보장해 열이 찌그러지는 것 방지 */
+}
+
+th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    padding: 12px 8px;
+    text-align: left;
+}
+
+td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 14px 8px;
+    vertical-align: middle;
+}
+
+/* 열 너비 수동 조정 (비율 맞추기) */
+th:nth-child(1), td:nth-child(1) { width: 60px; }  /* 지역 */
+th:nth-child(2), td:nth-child(2) { width: 120px; } /* 대학명 */
+th:nth-child(3), td:nth-child(3) { width: 150px; } /* 모집단위1 */
+th:nth-child(4), td:nth-child(4) { width: 150px; } /* 모집단위2 */
+/* 핵심과목과 권장과목은 내용이 많으므로 너비를 넓게 배정 */
+th:nth-child(5), td:nth-child(5) { min-width: 200px; color: #2563eb; font-weight: 500; } 
+th:nth-child(6), td:nth-child(6) { min-width: 200px; color: #059669; }
+
+/* 행 하이라이트 */
+tr:hover {
+    background-color: #f8fafc;
+}
+
+/* 카드형 스타일 (수학 과목용) */
+.card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 15px;
+    background: #ffffff;
+}
+
+.card h3 { margin-top: 0; color: #1e293b; }
