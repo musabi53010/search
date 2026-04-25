@@ -1,40 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>전공 · 수학 과목 검색기</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <meta charset="UTF-8">
+    <title>전공 · 수학 과목 검색기</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <header>
-      <h1>📚 전공 · 수학 과목 검색기</h1>
-      <p>전공별 권장 이수 과목과 수학 과목 정보를 빠르게 검색합니다.</p>
-    </header>
 
-    <section class="tabs">
-      <button class="tab active" data-tab="major">전공 검색</button>
-      <button class="tab" data-tab="subject">수학 과목 검색</button>
-    </section>
+    <div class="container">
 
-    <section id="major" class="panel active">
-      <div class="search-row">
-        <input id="majorInput" placeholder="예: 간호, 의사, 수의사, 산림, 천문, 물리, 반도체, 컴공" />
-        <button id="majorClear">초기화</button>
-      </div>
-      <div id="majorResult"></div>
-    </section>
+        <h1>📚 전공 · 수학 과목 검색기</h1>
+        <p>전공별 권장 이수 과목과 수학 과목 정보를 빠르게 검색합니다.</p>
 
-    <section id="subject" class="panel">
-      <div class="search-row">
-        <input id="subjectInput" placeholder="예: 기하, 미적2, 확통, 인공지능수학, 직무수학, 수학과문화" />
-        <button id="subjectClear">초기화</button>
-      </div>
-      <div id="subjectResult"></div>
-    </section>
-  </main>
-  <script src="script.js"></script>
+        <!-- 탭 -->
+        <div class="tabs">
+            <button id="majorTab" class="tab-btn active">🎓 전공 검색</button>
+            <button id="subjectTab" class="tab-btn">📘 수학 과목 검색</button>
+        </div>
+
+        <!-- 전공 검색 -->
+        <div id="majorSection" class="section">
+            <div class="search-box">
+                <input id="majorInput" type="text" placeholder="예: 간호, 의사, 수의사, 산림, 천문">
+                <button id="majorSearchBtn" class="search-btn">검색</button>
+                <button id="majorResetBtn" class="reset-btn">초기화</button>
+            </div>
+        </div>
+
+        <!-- 수학 과목 검색 -->
+        <div id="subjectSection" class="section" style="display:none;">
+            <div class="search-box">
+                <input id="subjectInput" type="text" placeholder="예: 기하, 미적2, 확통, 인공지능수학">
+                <button id="subjectSearchBtn" class="search-btn">검색</button>
+                <button id="subjectResetBtn" class="reset-btn">초기화</button>
+            </div>
+        </div>
+
+        <!-- 결과 -->
+        <div id="result"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+
 </body>
 </html>

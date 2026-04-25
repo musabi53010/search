@@ -77,3 +77,19 @@ button {
 .reset-btn:hover {
     background-color: #e2e8f0;
 }
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-box input {
+    flex: 1;
+}
