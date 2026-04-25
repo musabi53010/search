@@ -1,6 +1,6 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 및 통계 패턴
+// 1. 강조 및 통계 패턴 (비고란까지 완벽 대응)
 const MATH_PATTERNS = [
     { name: "대수", regex: /대수/g },
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
@@ -68,11 +68,15 @@ function searchMajor() {
     const found = findMajor(query);
     const keywords = found ? found.keywords : [query];
 
-    // 필터링 규칙: 학과명(모집단위1, 2)에 키워드가 있는 경우만 통과!
-    // 대학명이나 비고란에만 키워드가 있는 경우는 과감히 버립니다.
+    // 필터링 규칙: 오로지 '모집단위(학과명)'에 키워드가 있을 때만!
+    // '해양학과'의 비고란에 '우주'가 있어도, 학과명에 '천문'이나 '우주'가 없으면 이제 걸러집니다.
     const results = majorData.filter(row => {
-        const deptName = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
-        return keywords.some(k => deptName.includes(k));
+        const deptName1 = (row["모집단위1"] || "").trim();
+        const deptName2 = (row["모집단위2"] || "").trim();
+        const fullDeptName = deptName1 + " " + deptName2;
+        
+        // 검색 키워드 중 하나라도 학과명(모집단위)에 포함되어 있는지 검사
+        return keywords.some(k => fullDeptName.includes(k));
     });
 
     if (results.length === 0) { 
@@ -124,6 +128,7 @@ async function init() {
             loadCSV("major_recommendations.csv"), loadCSV("math_subjects.csv"),
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
+
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -132,12 +137,15 @@ async function init() {
             document.getElementById("subjectTab").classList.add("active"); document.getElementById("majorTab").classList.remove("active");
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
+
         document.getElementById("majorSearchBtn").onclick = searchMajor;
         document.getElementById("subjectSearchBtn").onclick = searchSubject;
         document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
         document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
+
         document.getElementById("majorInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchMajor(); } });
         document.getElementById("subjectInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchSubject(); } });
+
     } catch (e) { console.error(e); }
 }
 init();
