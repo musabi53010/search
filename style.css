@@ -1,1 +1,29 @@
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f7fb;color:#1f2937}.container{max-width:1180px;margin:0 auto;padding:28px 18px 60px}h1{margin:0 0 8px;font-size:28px}p{margin:0;color:#6b7280}.tabs{display:flex;gap:8px;margin:18px 0}.tab{border:1px solid #d1d5db;background:white;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}.tab.active{background:#111827;color:white}.panel{display:none}.panel.active{display:block}.search-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:16px}input{width:100%;padding:14px 16px;border:1px solid #d1d5db;border-radius:14px;font-size:16px;background:white}button{padding:12px 14px;border:0;border-radius:14px;background:#2563eb;color:white;cursor:pointer;font-weight:700}.card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 8px 24px rgba(15,23,42,.05)}.info{background:#eff6ff;border-color:#bfdbfe}.warn{background:#fff7ed;border-color:#fed7aa}.grid{display:grid;grid-template-columns:150px 1fr;gap:8px 12px}.label{font-weight:800;color:#374151}.table-wrap{width:100%;overflow-x:auto;border-radius:14px;border:1px solid #e5e7eb;background:white}table{width:100%;border-collapse:collapse;min-width:900px}th,td{border-bottom:1px solid #e5e7eb;padding:10px 12px;text-align:left;vertical-align:top;white-space:pre-wrap}th{background:#f9fafb;font-weight:800;position:sticky;top:0}.small{color:#6b7280;font-size:14px}.empty{padding:16px;color:#6b7280}@media(max-width:640px){h1{font-size:22px}.search-row{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 전공 검색 버튼 */
+button.primary {
+    background-color: #2563eb;
+    color: white;
+}
+
+button.primary:hover {
+    background-color: #1d4ed8;
+}
+
+/* 보조 버튼 (초기화 등) */
+button.secondary {
+    background-color: #e5e7eb;
+    color: #111827;
+}
+
+button.secondary:hover {
+    background-color: #d1d5db;
+}
