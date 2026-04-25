@@ -1,19 +1,19 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 패턴 (순서가 생명입니다! 긴 단어부터 배치하세요)
+// 1. 강조 패턴 (순서 고정: 긴 단어부터 매칭)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
-    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // '수학'보다 앞에 있어야 함
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g },
     { name: "실용통계", regex: /실용\s*통계/g },
     { name: "직무수학", regex: /직무\s*수학/g },
     { name: "수학과문화", regex: /수학과\s*문화/g },
     { name: "대수", regex: /대수/g },
     { name: "기하", regex: /기하/g },
-    { name: "수학(일반)", regex: /수학(?![가-힣])/g } // 가장 마지막에 검사
+    { name: "수학(일반)", regex: /수학(?![가-힣])/g }
 ];
 
 async function loadCSV(file) {
@@ -24,30 +24,33 @@ async function loadCSV(file) {
     });
 }
 
-// 하이라이트 함수 (공백 무시 매칭 및 우선순위 적용)
+// [핵심] 구조적 버그를 해결한 하이라이트 함수
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
-    let highlighted = text;
     
-    // 이미 하이라이트된 부분은 건드리지 않도록 함 (중복 방지용 임시 치환)
-    const sortedPatterns = [...MATH_PATTERNS]; 
+    // 띄어쓰기를 무시하고 비교하기 위한 클리닝
+    const cleanSelected = selectedSubject ? selectedSubject.replace(/\s+/g, "") : null;
+    
+    // 텍스트를 조각내지 않고 정규식의 '대체함수' 기능을 이용해 한 번에 처리
+    // 긴 패턴부터 찾아서 한 번 매칭된 곳은 다시 매칭되지 않게 보호함
+    let tempText = text;
+    
+    // 모든 패턴을 합친 거대한 정규식을 만듭니다.
+    const bigRegex = new RegExp(MATH_PATTERNS.map(p => `(${p.regex.source})`).join('|'), 'g');
 
-    sortedPatterns.forEach(item => {
-        highlighted = highlighted.replace(item.regex, (match) => {
-            // 비교 시 공백 제거: '경제 수학' == '경제수학'
-            const cleanMatch = match.replace(/\s+/g, "");
-            const cleanSelected = selectedSubject ? selectedSubject.replace(/\s+/g, "") : null;
-            const cleanItemName = item.name.replace(/\s+/g, "");
-            
-            const isSelected = (cleanSelected && (cleanMatch === cleanSelected || cleanItemName === cleanSelected));
-            
-            // 일반 '수학'은 무조건 math-core 색상 사용, 나머지는 지정된 colorClass
-            let finalClass = (item.name === "수학(일반)") ? "math-core" : colorClass;
+    return tempText.replace(bigRegex, (match) => {
+        // 현재 매칭된 글자가 어떤 과목 패턴에 속하는지 확인
+        const matchedPattern = MATH_PATTERNS.find(p => new RegExp(p.regex.source).test(match));
+        if (!matchedPattern) return match;
 
-            return `<span class="${finalClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
-        });
+        const cleanMatch = match.replace(/\s+/g, "");
+        const isSelected = (cleanSelected && (cleanMatch === cleanSelected || matchedPattern.name === selectedSubject));
+        
+        // 색상 클래스 결정
+        let finalClass = (matchedPattern.name === "수학(일반)") ? "math-core" : colorClass;
+        
+        return `<span class="${finalClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
     });
-    return highlighted;
 }
 
 function showResult(html) {
@@ -134,6 +137,7 @@ function searchMajor(selectedSubject = null) {
     showResult(html);
 }
 
+// searchSubject, init 함수는 기존과 동일하게 유지
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { clearResult(); return; }
