@@ -1,19 +1,19 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 패턴 (띄어쓰기 유연성 강화)
+// 1. 강조 패턴 (순서가 매우 중요합니다: 긴 단어부터 매칭)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
-    { name: "경제수학", regex: /경제\s*수학|경제수학/g },
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // 경제수학을 '수학'보다 먼저 배치
     { name: "실용통계", regex: /실용\s*통계/g },
     { name: "직무수학", regex: /직무\s*수학/g },
     { name: "수학과문화", regex: /수학과\s*문화/g },
     { name: "대수", regex: /대수/g },
     { name: "기하", regex: /기하/g },
-    { name: "수학(일반)", regex: /수학(?![가-힣])/g } 
+    { name: "수학(일반)", regex: /수학(?![가-힣])/g } // 단순 '수학'은 가장 마지막에 검사
 ];
 
 async function loadCSV(file) {
@@ -24,21 +24,28 @@ async function loadCSV(file) {
     });
 }
 
-// 하이라이트 함수: 선택된 과목은 띄어쓰기를 제거하고 비교하여 매칭시킵니다.
+// 하이라이트 함수: 선택된 과목 강조 로직 강화
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let highlighted = text;
     
+    // 패턴 이름을 길이순으로 정렬 (긴 단어가 우선권을 가짐)
     const sortedPatterns = [...MATH_PATTERNS].sort((a, b) => b.name.length - a.name.length);
 
     sortedPatterns.forEach(item => {
         highlighted = highlighted.replace(item.regex, (match) => {
-            // 핵심: 공백을 제거하고 비교하여 '경제수학' === '경제 수학'이 성립하게 함
+            // 비교 시 공백을 제거하여 '경제 수학'과 '경제수학'을 동일하게 취급
             const cleanMatch = match.replace(/\s+/g, "");
             const cleanSelected = selectedSubject ? selectedSubject.replace(/\s+/g, "") : null;
+            const cleanItemName = item.name.replace(/\s+/g, "");
             
-            const isSelected = (cleanSelected && (cleanMatch === cleanSelected || item.name === selectedSubject));
-            return `<span class="${colorClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
+            const isSelected = (cleanSelected && (cleanMatch === cleanSelected || cleanItemName === cleanSelected));
+            
+            // 강조 클래스 결정: '경제수학'처럼 특정 패턴에 걸리면 해당 클래스 부여
+            let finalClass = colorClass;
+            if (item.name === "수학(일반)") finalClass = "math-core"; // 일반 수학은 핵심과목 색상 권장
+
+            return `<span class="${finalClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
         });
     });
     return highlighted;
@@ -131,6 +138,7 @@ function searchMajor(selectedSubject = null) {
     showResult(html);
 }
 
+// searchSubject, init 함수 유지
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { clearResult(); return; }
