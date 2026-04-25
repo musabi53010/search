@@ -8,7 +8,7 @@ body {
 }
 
 .container {
-    max-width: 1200px; /* 화면을 넓게 사용 */
+    max-width: 1200px;
     margin: 40px auto;
     padding: 0 20px;
 }
@@ -46,7 +46,7 @@ p {
 }
 
 .tab-btn.active {
-    background: #2563eb; /* 포인트 블루 */
+    background: #2563eb;
     color: white;
     box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
 }
@@ -76,17 +76,32 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.search-btn { background: #2563eb; color: white; cursor: pointer; }
-.reset-btn { background: #64748b; color: white; cursor: pointer; }
+.search-btn, .reset-btn { border: none; border-radius: 10px; padding: 12px 20px; font-weight: bold; cursor: pointer; }
+.search-btn { background: #2563eb; color: white; }
+.reset-btn { background: #64748b; color: white; }
 
-/* 4. 상단 요약 정보 박스 (수학 교과 통계) */
+/* 4. 결과 출력 영역 (핵심: 처음엔 투명함) */
+#result {
+    margin-top: 20px;
+    overflow-x: auto;
+    transition: all 0.3s ease;
+}
+
+/* 결과가 있을 때만 자바스크립트로 이 클래스를 부여합니다 */
+.show-result {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* 5. 요약 정보 박스 */
 .summary-box {
-    background: #ffffff;
+    background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 18px;
     margin-bottom: 25px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .summary-box h4 {
@@ -97,108 +112,30 @@ input:focus {
     padding-left: 10px;
 }
 
-.summary-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
+.summary-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .summary-tags span {
-    background: #f8fafc;
+    background: white;
     border: 1px solid #cbd5e1;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 13.5px;
-    color: #475569;
 }
 
-.summary-tags strong {
-    color: #2563eb;
-    margin-left: 3px;
-}
+.summary-tags strong { color: #2563eb; }
 
-/* 5. 결과 테이블 디자인 */
-.result-container {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
+/* 6. 테이블 및 하이라이트 디자인 */
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px; }
+th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; padding: 12px 10px; text-align: left; }
+td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all; }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    min-width: 900px; /* 표가 찌그러지지 않게 최소 너비 설정 */
-}
-
-th {
-    background: #f8fafc;
-    border-bottom: 2px solid #e2e8f0;
-    color: #475569;
-    font-weight: 600;
-    padding: 12px 10px;
-    text-align: left;
-}
-
-td {
-    border-bottom: 1px solid #f1f5f9;
-    padding: 14px 10px;
-    vertical-align: middle;
-    word-break: keep-all; /* 단어 단위 줄바꿈으로 가독성 향상 */
-}
-
-/* 열 너비 설정 */
-th:nth-child(1), td:nth-child(1) { width: 50px; text-align: center; } /* 지역 */
-th:nth-child(2), td:nth-child(2) { width: 110px; font-weight: 600; }  /* 대학명 */
-th:nth-child(3), td:nth-child(3) { width: 140px; }                   /* 모집단위1 */
-th:nth-child(4), td:nth-child(4) { width: 140px; }                   /* 모집단위2 */
-th:nth-child(5), td:nth-child(5) { min-width: 180px; }               /* 핵심과목 */
-th:nth-child(6), td:nth-child(6) { min-width: 180px; }               /* 권장과목 */
-
-/* 6. 수학 과목 전용 강조 스타일 (JS에서 사용) */
 .math-core {
-    color: #1d4ed8; /* 핵심 수학: 진한 파란색 */
-    font-weight: 700;
-    background: #dbeafe; /* 아주 연한 파란 배경 */
-    padding: 1px 4px;
-    border-radius: 4px;
-    border: 1px solid #bfdbfe;
+    color: #1d4ed8; font-weight: 700; background: #dbeafe;
+    padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;
 }
 
 .math-recom {
-    color: #047857; /* 권장 수학: 진한 초록색 */
-    font-weight: 700;
-    background: #dcfce7; /* 아주 연한 초록 배경 */
-    padding: 1px 4px;
-    border-radius: 4px;
-    border: 1px solid #bbf7d0;
+    color: #047857; font-weight: 700; background: #dcfce7;
+    padding: 1px 4px; border-radius: 4px; border: 1px solid #bbf7d0;
 }
 
-/* 7. 기타 카드 및 안내 스타일 */
-.card {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-top: 15px;
-    background: #ffffff;
-}
-
-.no-result {
-    text-align: center;
-    padding: 40px;
-    color: #94a3b8;
-    font-size: 16px;
-}
-
-/* 가로 스크롤바 디자인 */
-div[style*="overflow-x:auto"]::-webkit-scrollbar {
-    height: 8px;
-}
-div[style*="overflow-x:auto"]::-webkit-scrollbar-track {
-    background: #f1f5f9;
-}
-div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
+.card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }
