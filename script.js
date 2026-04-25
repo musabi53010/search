@@ -1,6 +1,5 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 및 통계 패턴 (비고란까지 완벽 대응)
 const MATH_PATTERNS = [
     { name: "대수", regex: /대수/g },
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
@@ -64,16 +63,34 @@ function searchMajor() {
     const query = document.getElementById("majorInput").value.trim();
     if (!query) { showResult(""); return; }
     const found = findMajor(query);
-    
-    // 별칭에 없더라도 입력한 검색어 그대로 찾아보기 (예: 건축)
     const keywords = found ? found.keywords : [query];
-    const results = majorData.filter(row => {
-        const target = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""} ${row["대학명"] || ""}`;
-        return keywords.some(k => target.includes(k));
+
+    // --- 정교화된 필터링 로직 ---
+    // 1. 학과명(모집단위)에 키워드가 포함된 경우 (최우선)
+    let primaryResults = majorData.filter(row => {
+        const dept = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
+        return keywords.some(k => dept.includes(k));
     });
+
+    // 2. 학과명에는 없지만 대학명이나 비고란에 키워드가 포함된 경우 (보조)
+    // 단, 검색어가 너무 짧을 때(예: '우주') 비고란까지 뒤지면 노이즈가 심하므로 
+    // 학과명 검색 결과가 없을 때만 보여주거나 별도로 합칩니다.
+    let secondaryResults = [];
+    if (primaryResults.length < 5) { // 학과명 검색 결과가 적을 때만 비고란 검색 수행
+        secondaryResults = majorData.filter(row => {
+            const dept = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
+            const extra = `${row["대학명"] || ""} ${row["비고"] || ""}`;
+            const isDeptMatch = keywords.some(k => dept.includes(k));
+            const isExtraMatch = keywords.some(k => extra.includes(k));
+            return !isDeptMatch && isExtraMatch;
+        });
+    }
+
+    const results = [...primaryResults, ...secondaryResults];
 
     if (results.length === 0) { showResult("<p style='text-align:center;'>검색 결과가 없습니다.</p>"); return; }
 
+    // 통계 계산
     let mathCount = {};
     MATH_PATTERNS.forEach(p => mathCount[p.name] = 0);
     results.forEach(row => {
@@ -83,11 +100,15 @@ function searchMajor() {
     const sortedMath = Object.entries(mathCount).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
 
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
-    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약 (비고 포함)</h4><div class="summary-tags">
+    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약</h4><div class="summary-tags">
              ${sortedMath.map(([name, count]) => `<span>${name}: <strong>${count}회</strong></span>`).join("")}</div></div>`;
     html += `<table><thead><tr><th>지역</th><th>대학명</th><th>모집단위1</th><th>모집단위2</th><th>핵심과목</th><th>권장과목</th><th>비고</th></tr></thead><tbody>`;
-    results.forEach(row => {
-        html += `<tr><td>${row["지역"]||""}</td><td>${row["대학명"]||""}</td><td>${row["모집단위1"]||""}</td><td>${row["모집단위2"]||""}</td>
+    
+    results.forEach((row, index) => {
+        // 보조 결과(비고란 검색)는 약간 흐리게 표시하거나 구분할 수 있습니다 (선택사항)
+        const isSecondary = index >= primaryResults.length;
+        html += `<tr style="${isSecondary ? 'opacity: 0.8; background: #fafafa;' : ''}">
+                 <td>${row["지역"]||""}</td><td>${row["대학명"]||""}</td><td>${row["모집단위1"]||""}</td><td>${row["모집단위2"]||""}</td>
                  <td>${highlightMathSubjects(row["핵심과목"], "math-core")}</td><td>${highlightMathSubjects(row["권장과목"], "math-recom")}</td>
                  <td>${highlightMathSubjects(row["비고"], "math-recom")}</td></tr>`;
     });
@@ -113,7 +134,6 @@ async function init() {
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
 
-        // 탭 기능
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -123,28 +143,13 @@ async function init() {
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
 
-        // 검색 버튼 클릭 이벤트
         document.getElementById("majorSearchBtn").onclick = searchMajor;
         document.getElementById("subjectSearchBtn").onclick = searchSubject;
-
-        // 초기화 버튼 이벤트
         document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
         document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
 
-        // ★★★ 엔터키 이벤트 추가 ★★★
-        document.getElementById("majorInput").addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault(); // 기본 동작 방지
-                searchMajor();
-            }
-        });
-
-        document.getElementById("subjectInput").addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                searchSubject();
-            }
-        });
+        document.getElementById("majorInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchMajor(); } });
+        document.getElementById("subjectInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchSubject(); } });
 
     } catch (e) { console.error(e); }
 }
