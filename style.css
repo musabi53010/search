@@ -1,7 +1,7 @@
 /* 1. 전체 배경 및 기본 설정 */
 body {
     font-family: 'Pretendard', 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
-    background: #f1f5f9; /* 연한 회색 배경 */
+    background: #f1f5f9;
     color: #334155;
     margin: 0;
     line-height: 1.6;
@@ -113,7 +113,7 @@ input:focus {
 
 .summary-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* 요약표 개별 태그 */
+/* 요약표 태그 기본 */
 .summary-tag {
     cursor: pointer;
     border: 1px solid #cbd5e1;
@@ -125,34 +125,26 @@ input:focus {
     color: #334155;
 }
 
-.summary-tag:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border-color: #2563eb;
-}
-
-/* 요약표 태그 클릭 시 활성화 상태 */
+/* 요약표 클릭 시 활성화 (파란 배경 + 흰 글씨) */
 .active-tag {
     background: #2563eb !important;
     color: white !important;
     border-color: #1e40af !important;
-    font-weight: bold;
 }
 
-/* 활성화된 태그 안의 횟수(strong) 숫자 가독성 개선 */
+/* 활성화된 태그 내의 숫자(strong) 가독성 해결 */
 .active-tag strong {
-    color: #ffffff !important; 
-    text-shadow: 0px 0px 2px rgba(0,0,0,0.2);
+    color: white !important;
 }
 
 .summary-tags strong { color: #2563eb; }
 
-/* 6. 테이블 및 과목 하이라이트 */
+/* 6. 테이블 및 강조 스타일 */
 table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900px; }
 th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; padding: 12px 10px; text-align: left; }
 td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all; }
 
-/* 기본 수학 과목 강조 색상 (파랑/초록) */
+/* 기본 과목 강조 색상 (핵심/권장) */
 .math-core {
     color: #1d4ed8; font-weight: 700; background: #dbeafe;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;
@@ -163,16 +155,15 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bbf7d0;
 }
 
-/* 요약표 클릭 시 본문에서 강조되는 스타일 (노란색) */
+/* [핵심] 요약 클릭 시 본문에서 경제 수학 전체가 노랗게 변하는 스타일 */
 .selected-math {
-    background-color: #fef08a !important; /* 선명한 노란색 */
-    color: #854d0e !important;           /* 진한 갈색 글자 */
+    background-color: #fef08a !important; 
+    color: #854d0e !important;           
     font-weight: 800 !important;
     border: 2px solid #eab308 !important;
     padding: 2px 6px !important;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: inline-block;
 }
 
 .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }
