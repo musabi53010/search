@@ -80,14 +80,13 @@ input:focus {
 .search-btn { background: #2563eb; color: white; }
 .reset-btn { background: #64748b; color: white; }
 
-/* 4. 결과 출력 영역 (핵심: 처음엔 투명함) */
+/* 4. 결과 출력 영역 */
 #result {
     margin-top: 20px;
     overflow-x: auto;
     transition: all 0.3s ease;
 }
 
-/* 결과가 있을 때만 자바스크립트로 이 클래스를 부여합니다 */
 .show-result {
     background: white;
     padding: 25px;
@@ -113,12 +112,21 @@ input:focus {
 }
 
 .summary-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
 .summary-tags span {
     background: white;
     border: 1px solid #cbd5e1;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 13.5px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.summary-tags span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
 }
 
 .summary-tags strong { color: #2563eb; }
@@ -128,6 +136,7 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 900p
 th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; padding: 12px 10px; text-align: left; }
 td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all; }
 
+/* 기본 수학 과목 강조 (파랑/초록) */
 .math-core {
     color: #1d4ed8; font-weight: 700; background: #dbeafe;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;
@@ -138,10 +147,7 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     padding: 1px 4px; border-radius: 4px; border: 1px solid #bbf7d0;
 }
 
-.card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }
-
-
-/* 요약표 클릭 시 표 안의 해당 과목 강조 */
+/* ★ 요약표 클릭 시 표 안의 해당 과목 강조 (노란색) ★ */
 .selected-math {
     background-color: #fef08a !important; /* 선명한 노란색 */
     color: #854d0e !important;           /* 진한 갈색 글자 */
@@ -152,24 +158,4 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* 요약표 태그 호버 효과 */
-.summary-tags span {
-    transition: all 0.2s ease;
-    border: 1px solid #cbd5e1;
-}
-
-.summary-tags span:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* 요약표 클릭 시 강조될 과목의 스타일 */
-.selected-math {
-    background-color: #fef08a !important; /* 선명한 노란색 배경 */
-    color: #854d0e !important;           /* 진한 갈색 글자 */
-    font-weight: 800 !important;
-    border: 2px solid #eab308 !important;
-    padding: 1px 4px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
+.card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }

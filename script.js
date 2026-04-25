@@ -1,12 +1,13 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
+// 1. 강조 패턴 (경제수학 패턴 보강 및 긴 단어 우선순위)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
-    { name: "경제수학", regex: /경제\s*수학|경제수학/g },
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // 공백 유무 상관없이 매칭
     { name: "실용통계", regex: /실용\s*통계/g },
     { name: "직무수학", regex: /직무\s*수학/g },
     { name: "수학과문화", regex: /수학과\s*문화/g },
@@ -23,14 +24,18 @@ async function loadCSV(file) {
     });
 }
 
+// 하이라이트 함수
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let highlighted = text;
+    
+    // 패턴 이름을 길이순으로 정렬하여 정확한 매칭 유도
     const sortedPatterns = [...MATH_PATTERNS].sort((a, b) => b.name.length - a.name.length);
 
     sortedPatterns.forEach(item => {
         highlighted = highlighted.replace(item.regex, (match) => {
             const isSelected = (selectedSubject && item.name === selectedSubject);
+            // 클릭된 과목이면 'selected-math' 클래스를 추가하여 색을 변화시킴
             return `<span class="${colorClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
         });
     });
@@ -50,7 +55,6 @@ function clearResult() {
     resultDiv.classList.remove("show-result");
 }
 
-// 전역 함수로 등록
 window.filterBySubject = function(subjectName) {
     searchMajor(subjectName); 
 };
@@ -59,34 +63,26 @@ function searchMajor(selectedSubject = null) {
     const query = document.getElementById("majorInput").value.trim();
     if (!query) { clearResult(); return; }
     
-    // 별칭/키워드 매칭 로직 개선
     let searchKeywords = [query];
     const aliasEntry = aliasData.find(row => {
         if (!row["별칭"]) return false;
         const aliases = row["별칭"].split(";").map(x => x.trim());
-        return aliases.some(a => query === a) || row["대표전공"] === query;
+        return aliases.some(a => query.includes(a)) || row["대표전공"] === query;
     });
     
     if (aliasEntry) {
         searchKeywords = (aliasEntry["검색어"] || "").split(";").map(x => x.trim());
     }
 
-    // 필터링 로직: 서울대 등 모든 대학이 나오도록 범위를 넓힘
     const results = majorData.filter(row => {
-        const fullDept = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
-        
-        // 1. 입력한 검색어가 학과명에 포함되는가? (예: '국어교육'이 '국어교육과'에 포함됨)
-        const matchesQuery = fullDept.includes(query);
-        
-        // 2. 별칭 키워드 중 하나라도 포함되는가?
+        const d1 = (row["모집단위1"] || "").trim();
+        const d2 = (row["모집단위2"] || "").trim();
+        const fullDept = d1 + " " + d2;
+        const matchesDirect = fullDept.includes(query);
         const matchesKeyword = searchKeywords.some(k => fullDept.includes(k));
 
-        // 국어교육 검색 시 일어/중국어 등 다른 과가 섞이는 것을 방지하기 위한 필터
-        if (query === "국어교육" && (fullDept.includes("일어") || fullDept.includes("중국어"))) {
-            return false;
-        }
-
-        return matchesQuery || matchesKeyword;
+        if (query === "국어교육" && (fullDept.includes("일어") || fullDept.includes("중국어"))) return false;
+        return matchesDirect || matchesKeyword;
     });
 
     if (results.length === 0) {
@@ -94,7 +90,6 @@ function searchMajor(selectedSubject = null) {
         return;
     }
 
-    // 통계 계산
     let mathCount = {};
     MATH_PATTERNS.forEach(p => mathCount[p.name] = 0);
     results.forEach(row => {
@@ -108,19 +103,20 @@ function searchMajor(selectedSubject = null) {
 
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
     
-    // 요약표
     html += `<div class="summary-box">
                 <h4>📊 수학 교과 언급 요약 (과목 클릭 시 하단 표에서 강조)</h4>
                 <div class="summary-tags">
-                    ${sortedMath.map(([name, count]) => `
-                        <span onclick="filterBySubject('${name}')" 
-                              style="cursor:pointer; ${selectedSubject === name ? 'background:#2563eb; color:white; border-color:#1e40af;' : 'background:white;'}">
-                            ${name}: <strong>${count}회</strong>
-                        </span>`).join("")}
+                    ${sortedMath.map(([name, count]) => {
+                        const isSelected = (selectedSubject === name);
+                        return `<span onclick="filterBySubject('${name}')" 
+                                      style="cursor:pointer; border:1px solid #cbd5e1; padding:5px 12px; border-radius:20px; margin:2px; display:inline-block; transition:0.2s;
+                                      ${isSelected ? 'background:#2563eb; color:white; font-weight:bold; border-color:#1e40af;' : 'background:white; color:#334155;'}">
+                                    ${name}: <strong>${count}회</strong>
+                                </span>`;
+                    }).join("")}
                 </div>
             </div>`;
     
-    // 결과 테이블
     html += `<div style="overflow-x:auto;"><table><thead><tr><th>지역</th><th>대학명</th><th>모집단위1</th><th>모집단위2</th><th>핵심과목</th><th>권장과목</th><th>비고</th></tr></thead><tbody>`;
     results.forEach(row => {
         html += `<tr>
@@ -134,7 +130,25 @@ function searchMajor(selectedSubject = null) {
     showResult(html);
 }
 
-// 나머지 초기화 로직 (동일)
+// searchSubject, init 함수는 이전과 동일
+function searchSubject() {
+    const query = document.getElementById("subjectInput").value.trim();
+    if (!query) { clearResult(); return; }
+    const sub = mathData.find(r => (r["과목명"]||"").includes(query) || (r["별칭"]||"").includes(query));
+    if (!sub) { showResult("<p style='text-align:center; padding:20px;'>과목 정보를 찾을 수 없습니다.</p>"); return; }
+    const h = hierarchyData.find(r => r["과목명"] === sub["과목명"]);
+    let html = `<h2>📘 ${sub["과목명"]}</h2><div class="card">`;
+    ["구분", "이수학점", "성적처리", "수능관련", "설명", "추천전공", "관련학과"].forEach(f => { if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`; });
+    html += `</div>`;
+    if (h) {
+        html += `<div class="card"><h3>📊 이수 흐름</h3>`;
+        if (h["선수과목"]) html += `<p><strong>선수과목:</strong> ${h["선수과목"]}</p>`;
+        if (h["후속과목"]) html += `<p><strong>후속과목:</strong> ${h["후속과목"]}</p>`;
+        html += `</div>`;
+    }
+    showResult(html);
+}
+
 async function init() {
     try {
         [majorData, mathData, hierarchyData, aliasData] = await Promise.all([
@@ -150,8 +164,11 @@ async function init() {
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
         document.getElementById("majorSearchBtn").onclick = () => searchMajor();
+        document.getElementById("subjectSearchBtn").onclick = searchSubject;
+        document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
+        document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
         document.getElementById("majorInput").onkeydown = (e) => { if (e.key === "Enter") searchMajor(); };
-        // 기타 버튼 생략...
+        document.getElementById("subjectInput").onkeydown = (e) => { if (e.key === "Enter") searchSubject(); };
     } catch (e) { console.error(e); }
 }
 init();
