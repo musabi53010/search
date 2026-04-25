@@ -1,5 +1,6 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
+// 1. 강조 및 통계 패턴 (비고란까지 완벽 대응)
 const MATH_PATTERNS = [
     { name: "대수", regex: /대수/g },
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
@@ -33,7 +34,6 @@ function highlightMathSubjects(text, colorClass) {
     return highlighted;
 }
 
-// 결과 영역 업데이트 함수 (수정됨)
 function showResult(html) {
     const resultDiv = document.getElementById("result");
     resultDiv.innerHTML = html;
@@ -64,11 +64,14 @@ function searchMajor() {
     const query = document.getElementById("majorInput").value.trim();
     if (!query) { showResult(""); return; }
     const found = findMajor(query);
-    if (!found) { showResult("<p style='text-align:center;'>관련 전공 정보를 찾을 수 없습니다.</p>"); return; }
+    
+    // 별칭에 없더라도 입력한 검색어 그대로 찾아보기 (예: 건축)
+    const keywords = found ? found.keywords : [query];
     const results = majorData.filter(row => {
-        const target = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""}`;
-        return found.keywords.some(k => target.includes(k));
+        const target = `${row["모집단위1"] || ""} ${row["모집단위2"] || ""} ${row["대학명"] || ""}`;
+        return keywords.some(k => target.includes(k));
     });
+
     if (results.length === 0) { showResult("<p style='text-align:center;'>검색 결과가 없습니다.</p>"); return; }
 
     let mathCount = {};
@@ -80,7 +83,7 @@ function searchMajor() {
     const sortedMath = Object.entries(mathCount).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
 
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
-    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약</h4><div class="summary-tags">
+    html += `<div class="summary-box"><h4>📊 수학 교과 언급 요약 (비고 포함)</h4><div class="summary-tags">
              ${sortedMath.map(([name, count]) => `<span>${name}: <strong>${count}회</strong></span>`).join("")}</div></div>`;
     html += `<table><thead><tr><th>지역</th><th>대학명</th><th>모집단위1</th><th>모집단위2</th><th>핵심과목</th><th>권장과목</th><th>비고</th></tr></thead><tbody>`;
     results.forEach(row => {
@@ -95,10 +98,10 @@ function searchMajor() {
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { showResult(""); return; }
-    const sub = mathData.find(r => r["과목명"].includes(query) || (r["별칭"]||"").includes(query));
+    const sub = mathData.find(r => (r["과목명"]||"").includes(query) || (r["별칭"]||"").includes(query));
     if (!sub) { showResult("<p style='text-align:center;'>과목 정보를 찾을 수 없습니다.</p>"); return; }
     let html = `<h2>📘 ${sub["과목명"]}</h2><div class="card">`;
-    ["구분", "이수학점", "성적처리", "수능관련", "설명", "추천전공"].forEach(f => { if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`; });
+    ["구분", "이수학점", "성적처리", "수능관련", "설명", "추천전공", "관련직업", "관련학과", "주의"].forEach(f => { if(sub[f]) html += `<p><strong>${f}:</strong> ${sub[f]}</p>`; });
     html += `</div>`;
     showResult(html);
 }
@@ -109,6 +112,8 @@ async function init() {
             loadCSV("major_recommendations.csv"), loadCSV("math_subjects.csv"),
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
+
+        // 탭 기능
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -117,10 +122,30 @@ async function init() {
             document.getElementById("subjectTab").classList.add("active"); document.getElementById("majorTab").classList.remove("active");
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
+
+        // 검색 버튼 클릭 이벤트
         document.getElementById("majorSearchBtn").onclick = searchMajor;
         document.getElementById("subjectSearchBtn").onclick = searchSubject;
+
+        // 초기화 버튼 이벤트
         document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
         document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
+
+        // ★★★ 엔터키 이벤트 추가 ★★★
+        document.getElementById("majorInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault(); // 기본 동작 방지
+                searchMajor();
+            }
+        });
+
+        document.getElementById("subjectInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                searchSubject();
+            }
+        });
+
     } catch (e) { console.error(e); }
 }
 init();
