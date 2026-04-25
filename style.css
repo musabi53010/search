@@ -1,29 +1,79 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8fafc;
+    color: #1f2937;
+}
+
+/* 제목 */
+h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+/* 설명 텍스트 */
+p {
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+/* 검색창 */
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #60a5fa;
+}
+
+/* 버튼 공통 */
 button {
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 10px 16px;
     font-size: 15px;
-    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-/* 전공 검색 버튼 */
-button.primary {
-    background-color: #2563eb;
+/* 탭 버튼 (전공 / 수학) */
+.tab-btn {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+/* 선택된 버튼 */
+.tab-btn.active {
+    background-color: #60a5fa;
     color: white;
 }
 
-button.primary:hover {
-    background-color: #1d4ed8;
+/* hover */
+.tab-btn:hover {
+    background-color: #93c5fd;
 }
 
-/* 보조 버튼 (초기화 등) */
-button.secondary {
-    background-color: #e5e7eb;
-    color: #111827;
+/* 검색 버튼 */
+.search-btn {
+    background-color: #3b82f6;
+    color: white;
 }
 
-button.secondary:hover {
-    background-color: #d1d5db;
+.search-btn:hover {
+    background-color: #2563eb;
+}
+
+/* 초기화 버튼 */
+.reset-btn {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.reset-btn:hover {
+    background-color: #e2e8f0;
 }
