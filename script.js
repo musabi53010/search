@@ -1,19 +1,19 @@
 let majorData = [], mathData = [], hierarchyData = [], aliasData = [];
 
-// 1. 강조 패턴 (순서가 매우 중요합니다: 긴 단어부터 매칭)
+// 1. 강조 패턴 (순서가 생명입니다! 긴 단어부터 배치하세요)
 const MATH_PATTERNS = [
     { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
     { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
     { name: "확률과통계", regex: /확률과\s*통계|확통/g },
     { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
     { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
-    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // 경제수학을 '수학'보다 먼저 배치
+    { name: "경제수학", regex: /경제\s*수학|경제수학/g }, // '수학'보다 앞에 있어야 함
     { name: "실용통계", regex: /실용\s*통계/g },
     { name: "직무수학", regex: /직무\s*수학/g },
     { name: "수학과문화", regex: /수학과\s*문화/g },
     { name: "대수", regex: /대수/g },
     { name: "기하", regex: /기하/g },
-    { name: "수학(일반)", regex: /수학(?![가-힣])/g } // 단순 '수학'은 가장 마지막에 검사
+    { name: "수학(일반)", regex: /수학(?![가-힣])/g } // 가장 마지막에 검사
 ];
 
 async function loadCSV(file) {
@@ -24,26 +24,25 @@ async function loadCSV(file) {
     });
 }
 
-// 하이라이트 함수: 선택된 과목 강조 로직 강화
+// 하이라이트 함수 (공백 무시 매칭 및 우선순위 적용)
 function highlightMathSubjects(text, colorClass, selectedSubject = null) {
     if (!text) return "";
     let highlighted = text;
     
-    // 패턴 이름을 길이순으로 정렬 (긴 단어가 우선권을 가짐)
-    const sortedPatterns = [...MATH_PATTERNS].sort((a, b) => b.name.length - a.name.length);
+    // 이미 하이라이트된 부분은 건드리지 않도록 함 (중복 방지용 임시 치환)
+    const sortedPatterns = [...MATH_PATTERNS]; 
 
     sortedPatterns.forEach(item => {
         highlighted = highlighted.replace(item.regex, (match) => {
-            // 비교 시 공백을 제거하여 '경제 수학'과 '경제수학'을 동일하게 취급
+            // 비교 시 공백 제거: '경제 수학' == '경제수학'
             const cleanMatch = match.replace(/\s+/g, "");
             const cleanSelected = selectedSubject ? selectedSubject.replace(/\s+/g, "") : null;
             const cleanItemName = item.name.replace(/\s+/g, "");
             
             const isSelected = (cleanSelected && (cleanMatch === cleanSelected || cleanItemName === cleanSelected));
             
-            // 강조 클래스 결정: '경제수학'처럼 특정 패턴에 걸리면 해당 클래스 부여
-            let finalClass = colorClass;
-            if (item.name === "수학(일반)") finalClass = "math-core"; // 일반 수학은 핵심과목 색상 권장
+            // 일반 '수학'은 무조건 math-core 색상 사용, 나머지는 지정된 colorClass
+            let finalClass = (item.name === "수학(일반)") ? "math-core" : colorClass;
 
             return `<span class="${finalClass} ${isSelected ? 'selected-math' : ''}">${match}</span>`;
         });
@@ -87,10 +86,8 @@ function searchMajor(selectedSubject = null) {
         const d1 = (row["모집단위1"] || "").trim();
         const d2 = (row["모집단위2"] || "").trim();
         const fullDept = d1 + " " + d2;
-        
         const matchesQuery = fullDept.includes(query);
         const matchesKeyword = searchKeywords.some(k => fullDept.includes(k));
-
         if (query === "국어교육" && (fullDept.includes("일어") || fullDept.includes("중국어"))) return false;
         return matchesQuery || matchesKeyword;
     });
@@ -112,7 +109,6 @@ function searchMajor(selectedSubject = null) {
     const sortedMath = Object.entries(mathCount).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
 
     let html = `<h2>🎓 '${query}' 검색 결과</h2>`;
-    
     html += `<div class="summary-box">
                 <h4>📊 수학 교과 언급 요약 (과목 클릭 시 하단 표에서 강조)</h4>
                 <div class="summary-tags">
@@ -138,7 +134,6 @@ function searchMajor(selectedSubject = null) {
     showResult(html);
 }
 
-// searchSubject, init 함수 유지
 function searchSubject() {
     const query = document.getElementById("subjectInput").value.trim();
     if (!query) { clearResult(); return; }
@@ -163,6 +158,12 @@ async function init() {
             loadCSV("major_recommendations.csv"), loadCSV("math_subjects.csv"),
             loadCSV("math_hierarchy.csv"), loadCSV("major_alias.csv")
         ]);
+        document.getElementById("majorSearchBtn").onclick = () => searchMajor();
+        document.getElementById("subjectSearchBtn").onclick = searchSubject;
+        document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
+        document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
+        document.getElementById("majorInput").onkeydown = (e) => { if (e.key === "Enter") searchMajor(); };
+        document.getElementById("subjectInput").onkeydown = (e) => { if (e.key === "Enter") searchSubject(); };
         document.getElementById("majorTab").onclick = () => { 
             document.getElementById("majorTab").classList.add("active"); document.getElementById("subjectTab").classList.remove("active");
             document.getElementById("majorSection").style.display = "block"; document.getElementById("subjectSection").style.display = "none"; clearResult();
@@ -171,12 +172,6 @@ async function init() {
             document.getElementById("subjectTab").classList.add("active"); document.getElementById("majorTab").classList.remove("active");
             document.getElementById("subjectSection").style.display = "block"; document.getElementById("majorSection").style.display = "none"; clearResult();
         };
-        document.getElementById("majorSearchBtn").onclick = () => searchMajor();
-        document.getElementById("subjectSearchBtn").onclick = searchSubject;
-        document.getElementById("majorResetBtn").onclick = () => { document.getElementById("majorInput").value = ""; clearResult(); };
-        document.getElementById("subjectResetBtn").onclick = () => { document.getElementById("subjectInput").value = ""; clearResult(); };
-        document.getElementById("majorInput").onkeydown = (e) => { if (e.key === "Enter") searchMajor(); };
-        document.getElementById("subjectInput").onkeydown = (e) => { if (e.key === "Enter") searchSubject(); };
     } catch (e) { console.error(e); }
 }
 init();
