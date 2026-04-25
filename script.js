@@ -3,8 +3,20 @@ let mathData = [];
 let hierarchyData = [];
 let aliasData = [];
 
-// 수학 과목 리스트 (강조 및 카운트용)
-const MATH_SUBJECT_LIST = ["대수", "미적분Ⅰ", "미적분Ⅱ", "확률과통계", "기하", "경제수학", "인공지능수학", "수학과제탐구", "실용통계", "직무수학", "수학과문화"];
+// 1. 강조 및 통계에 사용할 수학 교과 리스트 (띄어쓰기 패턴 포함)
+const MATH_PATTERNS = [
+    { name: "대수", regex: /대수/g },
+    { name: "미적분Ⅰ", regex: /미적분\s*Ⅰ|미적분\s*I|미적분\s*1|미적\s*1/g },
+    { name: "미적분Ⅱ", regex: /미적분\s*Ⅱ|미적분\s*II|미적분\s*2|미적\s*2/g },
+    { name: "확률과통계", regex: /확률과\s*통계|확통/g },
+    { name: "기하", regex: /기하/g },
+    { name: "경제수학", regex: /경제\s*수학/g },
+    { name: "인공지능수학", regex: /인공지능\s*수학|AI\s*수학/g },
+    { name: "수학과제탐구", regex: /수학과제\s*탐구/g },
+    { name: "실용통계", regex: /실용\s*통계/g },
+    { name: "직무수학", regex: /직무\s*수학/g },
+    { name: "수학과문화", regex: /수학과\s*문화/g }
+];
 
 async function loadCSV(file) {
     const response = await fetch(file);
@@ -19,13 +31,16 @@ async function loadCSV(file) {
     });
 }
 
-// 수학 과목만 찾아 색상을 입히는 함수
+// 2. 수학 과목 하이라이트 함수 (띄어쓰기 유연하게 대응)
 function highlightMathSubjects(text, colorClass) {
     if (!text) return "";
     let highlighted = text;
-    MATH_SUBJECT_LIST.forEach(subject => {
-        const regex = new RegExp(subject, "g");
-        highlighted = highlighted.replace(regex, `<span class="${colorClass}">${subject}</span>`);
+    
+    // 패턴 리스트를 순회하며 매칭되는 모든 형태를 span으로 감쌈
+    MATH_PATTERNS.forEach(item => {
+        highlighted = highlighted.replace(item.regex, (match) => {
+            return `<span class="${colorClass}">${match}</span>`;
+        });
     });
     return highlighted;
 }
@@ -61,23 +76,29 @@ function searchMajor() {
 
     if (results.length === 0) { showResult("<p>검색 결과가 없습니다.</p>"); return; }
 
-    // --- 수학 과목 통계 계산 ---
+    // --- 수학 과목 통계 계산 (정규식 활용) ---
     let mathCount = {};
-    MATH_SUBJECT_LIST.forEach(s => mathCount[s] = 0);
+    MATH_PATTERNS.forEach(p => mathCount[p.name] = 0);
     
     results.forEach(row => {
-        const combined = (row["핵심과목"] || "") + "," + (row["권장과목"] || "");
-        MATH_SUBJECT_LIST.forEach(s => {
-            if (combined.includes(s)) mathCount[s]++;
+        const combined = (row["핵심과목"] || "") + " " + (row["권장과목"] || "");
+        MATH_PATTERNS.forEach(p => {
+            // 해당 행에 패턴이 한 번이라도 등장하면 카운트
+            if (p.regex.test(combined)) {
+                mathCount[p.name]++;
+            }
+            p.regex.lastIndex = 0; // 정규식 인덱스 초기화
         });
     });
 
-    const sortedMath = Object.entries(mathCount).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+    const sortedMath = Object.entries(mathCount)
+        .filter(e => e[1] > 0)
+        .sort((a, b) => b[1] - a[1]);
 
     // --- 화면 출력 ---
     let html = `<h2>🎓 '${query}' 관련 전공 검색 결과</h2>`;
     
-    // 요약 박스 추가
+    // 요약 박스
     html += `<div class="summary-box">
                 <h4>📊 수학 교과 언급 횟수 요약</h4>
                 <div class="summary-tags">
@@ -104,7 +125,7 @@ function searchMajor() {
     showResult(html);
 }
 
-// (searchSubject, findSubject, findHierarchy 함수는 기존과 동일하게 유지)
+// 수학 과목 상세 검색 함수
 function findSubject(query) {
     for (const row of mathData) {
         const aliases = splitAliases(row["별칭"]);
