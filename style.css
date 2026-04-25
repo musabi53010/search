@@ -139,3 +139,26 @@ td { border-bottom: 1px solid #f1f5f9; padding: 14px 10px; word-break: keep-all;
 }
 
 .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px; background: #ffffff; }
+
+
+/* 요약표 클릭 시 표 안의 해당 과목 강조 */
+.selected-math {
+    background-color: #fef08a !important; /* 선명한 노란색 */
+    color: #854d0e !important;           /* 진한 갈색 글자 */
+    font-weight: 800 !important;
+    border: 2px solid #eab308 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 요약표 태그 호버 효과 */
+.summary-tags span {
+    transition: all 0.2s ease;
+    border: 1px solid #cbd5e1;
+}
+
+.summary-tags span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
