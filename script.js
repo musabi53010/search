@@ -1,21 +1,173 @@
-const FILES={math:"math_subjects.csv",hierarchy:"math_hierarchy.csv",majors:"major_recommendations.csv",aliases:"major_alias.csv"};
-let mathRows=[],hierarchyRows=[],majorRows=[],aliasRows=[];
-const MATH_SUBJECTS={"대수":["대수"],"미적분Ⅰ":["미적분Ⅰ","미적분 I","미적분1","미적1"],"미적분Ⅱ":["미적분Ⅱ","미적분 II","미적분2","미적2"],"확률과통계":["확률과통계","확률과 통계","확통"],"기하":["기하"],"경제수학":["경제수학","경제 수학"],"인공지능수학":["인공지능수학","인공지능 수학","AI수학","AI 수학"],"수학과제탐구":["수학과제탐구","수학과제 탐구","수학 과제 탐구"],"실용통계":["실용통계","실용 통계"],"기본수학1":["기본수학1","기본 수학1","기본수학 1"],"기본수학2":["기본수학2","기본 수학2","기본수학 2"],"직무수학":["직무수학","직무 수학"],"수학과문화":["수학과문화","수학과 문화"],"전문수학":["전문수학","전문 수학"],"이산수학":["이산수학","이산 수학"],"고급대수":["고급대수","고급 대수"],"고급미적분":["고급미적분","고급 미적분"],"고급기하":["고급기하","고급 기하"]};
-function normalizeRow(row){const out={};Object.keys(row||{}).forEach(k=>{const key=String(k||"").trim();out[key]=row[k]==null?"":String(row[k]).trim()});return out}
-function loadCsv(path){return new Promise((resolve,reject)=>{Papa.parse(path,{download:true,header:true,skipEmptyLines:true,encoding:"UTF-8",complete:r=>resolve((r.data||[]).map(normalizeRow)),error:reject})})}
-function splitAliases(text){return String(text||"").split(";").map(x=>x.trim()).filter(Boolean).sort((a,b)=>b.length-a.length)}
-function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
-function countOccurrences(text,alias){return (String(text).match(new RegExp(escapeRegExp(alias),"g"))||[]).length}
-function escapeHtml(text){return String(text||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-function card(html,cls=""){return `<div class="card ${cls}">${html}</div>`}
-function findSubject(q){for(const row of mathRows){const aliases=splitAliases(row["별칭"]);if(row["과목명"]&&q.includes(row["과목명"]))return row;if(aliases.some(a=>q.includes(a)))return row}return null}
-function findHierarchy(q){for(const row of hierarchyRows){const aliases=splitAliases(row["별칭"]);if(row["과목명"]&&q.includes(row["과목명"]))return row;if(aliases.some(a=>q.includes(a)))return row}return null}
-function findMajorAndKeywords(q){for(const row of aliasRows){const aliases=splitAliases(row["별칭"]);if(aliases.some(a=>q.includes(a)))return{major:row["대표전공"]||"",keywords:splitAliases(row["검색어"])}}return{major:"",keywords:[]}}
-function summarizeMathSubjects(rows){const coreText=rows.map(r=>r["핵심과목"]||"").join(" ");const recText=rows.map(r=>r["권장과목"]||"").join(" ");const core={},rec={};for(const [name,aliases] of Object.entries(MATH_SUBJECTS)){for(const alias of aliases){core[name]=(core[name]||0)+countOccurrences(coreText,alias);rec[name]=(rec[name]||0)+countOccurrences(recText,alias)}}return{core:Object.entries(core).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]),rec:Object.entries(rec).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1])}}
-function renderKeyValues(row,keys){return `<div class="grid">`+keys.filter(k=>row[k]).map(k=>`<div class="label">${k}</div><div>${escapeHtml(row[k])}</div>`).join("")+`</div>`}
-function renderTable(rows){const cols=["지역","대학명","모집단위1","모집단위2","핵심과목","권장과목","비고"];if(!rows.length)return `<div class="empty">결과가 없습니다.</div>`;return `<div class="table-wrap"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${escapeHtml(r[c]||"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
-function searchMajor(){const q=document.getElementById("majorInput").value.trim();const out=document.getElementById("majorResult");if(!q){out.innerHTML="";return}const {major,keywords}=findMajorAndKeywords(q);if(!major){out.innerHTML=card("관련 전공 정보를 찾을 수 없습니다. 다른 키워드를 입력하세요.","warn");return}const result=majorRows.filter(row=>{const target=`${row["모집단위1"]||""} ${row["모집단위2"]||""}`;return keywords.some(k=>target.includes(k))});if(!result.length){out.innerHTML=card(`'${escapeHtml(major)}' 관련 결과를 찾지 못했습니다.`,"warn");return}const s=summarizeMathSubjects(result);const coreText=s.core.length?s.core.map(([n,c])=>`${n}(${c}회)`).join(", "):"핵심과목에서 관련 수학 과목 없음";const recText=s.rec.length?s.rec.map(([n,c])=>`${n}(${c}회)`).join(", "):"권장과목에서 관련 수학 과목 없음";out.innerHTML=card(`<h2>'${escapeHtml(q)}' 관련 전공 검색 결과</h2><p>인식된 전공 분야: <b>${escapeHtml(major)}</b></p>`)+card(`<h3>📌 이 전공 분야에서 등장하는 수학 과목 요약</h3><p><b>핵심과목:</b> ${escapeHtml(coreText)}</p><p><b>권장과목:</b> ${escapeHtml(recText)}</p>`,"info")+renderTable(result)}
-function searchSubject(){const q=document.getElementById("subjectInput").value.trim();const out=document.getElementById("subjectResult");if(!q){out.innerHTML="";return}const subject=findSubject(q);if(!subject){out.innerHTML=card("관련 수학 과목 정보를 찾을 수 없습니다.","warn");return}const h=findHierarchy(q);let html=card(`<h2>📘 ${escapeHtml(subject["과목명"]||"")}</h2>`+renderKeyValues(subject,["구분","이수학점","성적처리","수능관련","설명","추천전공","관련직업","관련학과"])+(subject["주의"]?`<p class="small"><b>주의:</b> ${escapeHtml(subject["주의"])}</p>`:""));if(h)html+=card(`<h3>📊 이수 흐름</h3>`+renderKeyValues(h,["선수과목","후속과목","유형","설명"]),"info");out.innerHTML=html}
-function bindEvents(){document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));btn.classList.add("active");document.getElementById(btn.dataset.tab).classList.add("active")}));document.getElementById("majorInput").addEventListener("input",searchMajor);document.getElementById("subjectInput").addEventListener("input",searchSubject);document.getElementById("majorClear").addEventListener("click",()=>{document.getElementById("majorInput").value="";document.getElementById("majorResult").innerHTML=""});document.getElementById("subjectClear").addEventListener("click",()=>{document.getElementById("subjectInput").value="";document.getElementById("subjectResult").innerHTML=""})}
-async function init(){try{[mathRows,hierarchyRows,majorRows,aliasRows]=await Promise.all([loadCsv(FILES.math),loadCsv(FILES.hierarchy),loadCsv(FILES.majors),loadCsv(FILES.aliases)]);majorRows=majorRows.map(r=>({"권역":r["권역"]||"","지역":r["지역"]||"","대학명":r["대학명"]||"","모집단위1":r["모집단위1"]||"","모집단위2":r["모집단위2"]||"","핵심과목":r["핵심과목"]||"","권장과목":r["권장과목"]||"","비고":r["비고"]||""}));bindEvents()}catch(err){document.body.innerHTML=`<main class="container">${card("CSV 파일을 불러오지 못했습니다. 파일명과 위치를 확인하세요.","warn")}<pre>${escapeHtml(err.message||err)}</pre></main>`}}
-init();
+const FILES = {
+    math: "math_subjects.csv",
+    hierarchy: "math_hierarchy.csv",
+    majors: "major_recommendations.csv",
+    aliases: "major_alias.csv"
+};
+
+let mathRows = [], hierarchyRows = [], majorRows = [], aliasRows = [];
+
+// CSV 파싱 함수
+async function loadCsv(file) {
+    try {
+        const response = await fetch(file);
+        if (!response.ok) throw new Error(`파일을 찾을 수 없습니다: ${file}`);
+        const text = await response.text();
+        const rows = text.split('\n').filter(row => row.trim() !== '');
+        const headers = rows[0].split(',').map(h => h.trim());
+        
+        return rows.slice(1).map(row => {
+            const values = row.split(',').map(v => v.trim());
+            const obj = {};
+            headers.forEach((header, i) => {
+                obj[header] = values[i] || "";
+            });
+            return obj;
+        });
+    } catch (error) {
+        console.error("데이터 로드 중 오류 발생:", error);
+        return [];
+    }
+}
+
+// 초기화 함수
+async function init() {
+    [mathRows, hierarchyRows, majorRows, aliasRows] = await Promise.all([
+        loadCsv(FILES.math),
+        loadCsv(FILES.hierarchy),
+        loadCsv(FILES.majors),
+        loadCsv(FILES.aliases)
+    ]);
+    console.log("데이터 로드 완료");
+    bindEvents();
+}
+
+// 이벤트 바인딩
+function bindEvents() {
+    // 1. 탭 전환 로직
+    const majorTab = document.getElementById("majorTab");
+    const subjectTab = document.getElementById("subjectTab");
+    const majorSection = document.getElementById("majorSection");
+    const subjectSection = document.getElementById("subjectSection");
+
+    majorTab.addEventListener("click", () => {
+        majorTab.classList.add("active");
+        subjectTab.classList.remove("active");
+        majorSection.style.display = "block";
+        subjectSection.style.display = "none";
+    });
+
+    subjectTab.addEventListener("click", () => {
+        subjectTab.classList.add("active");
+        majorTab.classList.remove("active");
+        subjectSection.style.display = "block";
+        majorSection.style.display = "none";
+    });
+
+    // 2. 검색 및 초기화 버튼 이벤트 (HTML ID와 일치시킴)
+    document.getElementById("majorSearchBtn").addEventListener("click", searchMajor);
+    document.getElementById("majorResetBtn").addEventListener("click", () => {
+        document.getElementById("majorInput").value = "";
+        document.getElementById("majorResult").innerHTML = "";
+    });
+
+    document.getElementById("subjectSearchBtn").addEventListener("click", searchSubject);
+    document.getElementById("subjectResetBtn").addEventListener("click", () => {
+        document.getElementById("subjectInput").value = "";
+        document.getElementById("subjectResult").innerHTML = "";
+    });
+
+    // 엔터키 검색 지원
+    document.getElementById("majorInput").addEventListener("keypress", (e) => {
+        if (e.key === 'Enter') searchMajor();
+    });
+    document.getElementById("subjectInput").addEventListener("keypress", (e) => {
+        if (e.key === 'Enter') searchSubject();
+    });
+}
+
+// 전공 검색 로직
+function searchMajor() {
+    const query = document.getElementById("majorInput").value.trim();
+    if (!query) return;
+
+    const out = document.getElementById("majorResult");
+    
+    // 별칭 찾기
+    const aliasMatch = aliasRows.find(a => 
+        a["대표전공"].includes(query) || a["별칭"].includes(query) || a["검색어"].includes(query)
+    );
+    
+    const searchTerm = aliasMatch ? aliasMatch["대표전공"] : query;
+
+    const filtered = majorRows.filter(r => 
+        r["모집단위1"].includes(searchTerm) || 
+        r["모집단위2"].includes(searchTerm) ||
+        r["대학명"].includes(searchTerm)
+    );
+
+    if (filtered.length === 0) {
+        out.innerHTML = `<div class="no-result">검색 결과가 없습니다.</div>`;
+        return;
+    }
+
+    let html = `<h3>'${searchTerm}' 검색 결과 (${filtered.length}건)</h3>`;
+    filtered.forEach(r => {
+        html += `
+            <div class="result-card">
+                <div class="card-header">${r["대학명"]} - ${r["모집단위1"]} (${r["모집단위2"]})</div>
+                <div class="card-body">
+                    <p><strong>📍 권역/지역:</strong> ${r["권역"]} / ${r["지역"]}</p>
+                    <p><strong>✅ 핵심과목:</strong> <span class="highlight">${r["핵심과목"]}</span></p>
+                    <p><strong>💡 권장과목:</strong> ${r["권장과목"]}</p>
+                    ${r["비고"] ? `<p class="memo">※ ${r["비고"]}</p>` : ""}
+                </div>
+            </div>
+        `;
+    });
+    out.innerHTML = html;
+}
+
+// 수학 과목 검색 로직
+function searchSubject() {
+    const query = document.getElementById("subjectInput").value.trim();
+    if (!query) return;
+
+    const out = document.getElementById("subjectResult");
+    
+    const subject = mathRows.find(s => 
+        s["과목명"].includes(query) || (s["별칭"] && s["별칭"].includes(query))
+    );
+
+    const hierarchy = hierarchyRows.find(h => 
+        h["과목명"].includes(query) || (h["별칭"] && h["별칭"].includes(query))
+    );
+
+    if (!subject) {
+        out.innerHTML = `<div class="no-result">해당 과목 정보를 찾을 수 없습니다.</div>`;
+        return;
+    }
+
+    let html = `
+        <div class="result-card subject-card">
+            <div class="card-header">📘 ${subject["과목명"]} (${subject["구분"]})</div>
+            <div class="card-body">
+                <p><strong>📊 성적처리:</strong> ${subject["성적처리"]}</p>
+                <p><strong>📝 수능관련:</strong> ${subject["수능관련"]}</p>
+                <p><strong>🔍 주요내용:</strong> ${subject["설명"]}</p>
+                <p><strong>🎓 관련학과:</strong> ${subject["관련학과"]}</p>
+                ${hierarchy ? `
+                    <div class="hierarchy-box">
+                        <p><strong>↑ 선수과목:</strong> ${hierarchy["선수과목"] || "없음"}</p>
+                        <p><strong>↓ 후속과목:</strong> ${hierarchy["후속과목"] || "없음"}</p>
+                        <p><strong>💡 흐름:</strong> ${hierarchy["설명"]}</p>
+                    </div>
+                ` : ""}
+            </div>
+        </div>
+    `;
+    out.innerHTML = html;
+}
+
+// 페이지 로드 시 실행
+window.onload = init;
